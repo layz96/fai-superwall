@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ru"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
+<title>F/AI — Онбординг</title>
+<!-- Paywall.js — мост Superwall SDK ↔ страница (async обязателен). -->
+<script async src="https://cdn.superwall.me/runtime/entrypoint.js"></script>
+<script src="onb_lottie.min.js"></script>
+<script src="onb_anims.js"></script>
+<style>
+:root{
+  --accent:#7F86DB;--accent2:#BD62F4;--brand:linear-gradient(100deg,#7F86DB 0%,#BD62F4 100%);
+  --acc-soft:rgba(127,134,219,.16);--acc-line:rgba(127,134,219,.45);
+  --bg:#0A0A0A;--card:#151517;--card2:#1C1C1F;--container:#1A1A1D;
+  --text:#F5F5F7;--muted:#8A8A93;--sec:#A1A1AA;--border:rgba(255,255,255,.09);
+  --r-card:16px;--r-lg:20px;--r-xl:26px;--r-full:100px;
+  --safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",sans-serif;
+  color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overflow:hidden}
+.wrap{height:100dvh;display:flex;flex-direction:column;position:relative}
+.pad{padding:0 20px}
+.scroll{flex:1;overflow-y:auto;scrollbar-width:none;animation:fade .3s both;display:flex;flex-direction:column}.scroll::-webkit-scrollbar{display:none}
+.sp{flex:1 0 10px} /* спейсер вертикального центрирования: сжимается при переполнении */
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+
+/* Top bar / progress */
+.top{display:flex;align-items:center;gap:12px;padding:calc(var(--safe-t) + 12px) 20px 6px}
+.back{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:1px solid var(--border);color:var(--muted);flex:none;cursor:pointer}
+.back svg{width:16px;height:16px}
+.bar{flex:1;height:5px;border-radius:5px;background:var(--container);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:5px;background:var(--brand);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.left{font-size:12px;color:var(--muted);font-weight:600;flex:none}
+.hint{padding:8px 20px 0;font-size:12.5px;color:var(--muted);font-weight:600}
+
+/* Head */
+.head{padding:18px 20px 20px}
+.title{font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1.14}
+.title .g{background:var(--brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sub{margin-top:9px;font-size:15.5px;color:var(--muted);line-height:1.45}
+
+/* Options */
+.opts{display:flex;flex-direction:column;gap:10px;padding:0 20px}
+.opt{display:flex;align-items:center;gap:13px;width:100%;padding:16px;border-radius:var(--r-card);background:var(--card);
+  border:1.5px solid var(--border);font-family:inherit;font-size:16px;font-weight:600;color:var(--text);text-align:left;cursor:pointer;transition:transform .1s,border-color .15s,box-shadow .15s}
+.opt:active{transform:scale(.985)}
+.opt.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--acc-soft)}
+.opt .ic{width:40px;height:40px;border-radius:12px;background:var(--acc-soft);display:grid;place-items:center;flex:none;font-size:20px}
+.opt .lbl{flex:1}.opt .chev{width:18px;height:18px;color:#4A4A52;flex:none}
+/* Coach — полноэкранный выбор персонажа (game character select) */
+.gamesel{position:absolute;inset:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.gamesel::-webkit-scrollbar{display:none}
+.cslide{position:relative;flex:0 0 100%;scroll-snap-align:start;height:100%}
+/* Сдвиг кадра вверх: голова уходит в верхнюю треть, инфо-блок не налазит на лицо */
+.cslide img{position:absolute;left:0;right:0;top:-17%;width:100%;height:117%;object-fit:cover;object-position:center top}
+.cgrad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.72) 0%,rgba(10,10,10,.1) 22%,rgba(10,10,10,0) 42%,rgba(10,10,10,.86) 74%,#0A0A0A 96%)}
+.cinfo{position:absolute;left:0;right:0;bottom:158px;padding:0 26px;text-align:center}
+.cinfo .cn{font-size:36px;font-weight:800;letter-spacing:-.02em;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+.cinfo .ct{font-size:14px;font-weight:700;margin-top:3px;background:var(--brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.cinfo .cd{font-size:14.5px;color:#C9C9D2;line-height:1.5;margin-top:10px}
+.ctraits{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:13px}
+.ctag{font-size:12px;font-weight:600;color:var(--text);background:rgba(255,255,255,.1);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 12px}
+.cquote{font-size:13px;font-style:italic;color:#A9A9B4;line-height:1.5;margin-top:13px}
+/* Заголовок в одной строке с кнопкой «назад» — не налазит на головы */
+.ctop{position:absolute;top:calc(var(--safe-t) + 12px);left:0;right:0;display:flex;align-items:center;gap:12px;padding:0 20px;z-index:5}
+.ctop .ctt{flex:1;text-align:center;font-size:17px;font-weight:800;letter-spacing:-.01em;text-shadow:0 2px 14px rgba(0,0,0,.8)}
+.ctop .csp{width:32px;flex:none}
+.csub{position:absolute;top:calc(var(--safe-t) + 47px);left:0;right:0;text-align:center;font-size:12px;color:rgba(220,220,228,.8);text-shadow:0 1px 10px rgba(0,0,0,.8);pointer-events:none}
+.cfoot{position:absolute;left:0;right:0;bottom:0;padding:0 20px calc(14px + var(--safe-b))}
+.dots{display:flex;justify-content:center;gap:7px;margin:0 0 14px}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.22);transition:width .2s,background .2s}
+.dot.on{width:22px;border-radius:7px;background:var(--brand)}
+/* Grid tiles */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 20px}
+.tile{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:20px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:pointer;text-align:center;min-height:128px;transition:transform .1s,border-color .15s,box-shadow .15s;color:var(--text);font-family:inherit}
+.tile:active{transform:scale(.97)}
+.tile.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--acc-soft)}
+.tile .te{width:54px;height:54px;border-radius:16px;background:var(--acc-soft);display:grid;place-items:center;font-size:27px;flex:none}
+.tile .te svg{width:26px;height:26px;color:var(--accent)}
+.tile .tlb{font-size:14.5px;font-weight:700;line-height:1.25}
+/* нечётная последняя плитка — во всю ширину, горизонтальная */
+.grid .tile:nth-child(odd):last-child{grid-column:1/-1;flex-direction:row;min-height:0;padding:15px 16px;text-align:left;justify-content:flex-start}
+/* метка секции над заголовком */
+.secl{padding:14px 20px 0;font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--accent)}
+.secl+.head{padding-top:8px}
+/* подписи под слайдером */
+.numlab{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-weight:600;margin-top:8px}
+/* Segmented control (Motra-style) */
+.seg{padding:0 20px}
+.segbar{display:flex;background:var(--card);border:1px solid var(--border);border-radius:15px;padding:5px;gap:4px}
+.segbar button{flex:1;padding:13px 4px;border:none;background:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;border-radius:11px;cursor:pointer;transition:.15s;white-space:nowrap}
+.segbar button.sel{background:var(--brand);color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.4)}
+.segdesc{margin-top:16px;background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:16px;font-size:14px;color:var(--sec);line-height:1.5}
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:9px;padding:0 20px}
+.chip{padding:11px 15px;border-radius:var(--r-full);background:var(--card);border:1.5px solid var(--border);font-family:inherit;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;transition:.15s}
+.chip.sel{background:var(--brand);color:#fff;border-color:transparent}
+/* Fields */
+.field{padding:0 20px}
+.field input,.datew input{width:100%;padding:16px;border-radius:var(--r-card);border:1.5px solid var(--border);font-family:inherit;font-size:17px;background:var(--card);color:var(--text);outline:none;color-scheme:dark}
+.field input:focus{border-color:var(--accent)}.field input::placeholder{color:#5A5A62}
+.datew{padding:0 20px}
+.datew input[type=date]{-webkit-appearance:none;appearance:none;min-width:0;display:block;text-align:left}
+.datew input[type=date]::-webkit-date-and-time-value{text-align:left}
+/* Credibility */
+.statn{font-family:ui-rounded,"SF Pro Rounded",-apple-system;font-size:66px;font-weight:800;letter-spacing:-.03em;line-height:1;background:var(--brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.badge{display:flex;align-items:center;gap:13px;background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px}
+.badge .bi{width:46px;height:46px;border-radius:13px;background:var(--acc-soft);display:grid;place-items:center;font-size:24px;flex:none}
+.badge .bt{font-size:14.5px;font-weight:700;line-height:1.3}.badge .bs{font-size:12px;color:var(--muted);margin-top:3px}
+.press{display:flex;gap:8px;flex-wrap:wrap}
+.press .pchip{flex:1;min-width:92px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px 8px;font-size:12px;color:var(--muted);font-weight:600}
+.sec-l{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;margin:16px 20px 8px}
+/* Number */
+.num{text-align:center;padding:10px 20px 6px}
+.num .val{font-family:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;font-size:64px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.num .val small{font-size:20px;font-weight:700;color:var(--muted)}
+/* кастомный слайдер: градиентная заливка слева (через --p) + крупный thumb */
+.num input[type=range]{-webkit-appearance:none;appearance:none;width:100%;margin-top:26px;height:32px;background:transparent}
+.num input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:8px;
+  background:linear-gradient(100deg,var(--accent),var(--accent2)) 0/var(--p,50%) 100% no-repeat,var(--container)}
+.num input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;
+  background:#fff;border:none;box-shadow:0 3px 12px rgba(0,0,0,.5),0 0 0 5px var(--acc-soft);margin-top:-10px}
+/* CTA dock */
+.foot{padding:12px 20px calc(14px + var(--safe-b))}
+.cta{width:100%;border:none;cursor:pointer;padding:18px;border-radius:var(--r-full);background:var(--brand);color:#fff;font-family:inherit;font-size:17px;font-weight:700;box-shadow:0 12px 30px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s}
+.cta:active{transform:scale(.98)}.cta svg{width:18px;height:18px}
+.ghost{display:block;width:100%;margin-top:10px;background:none;border:none;color:var(--muted);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;padding:6px}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);padding:18px;margin:0 20px}
+.card h3{font-size:17px;font-weight:800;margin-bottom:12px}
+.ins{display:flex;align-items:center;gap:11px;padding:8px 0;font-size:15px}.ins .d{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.sum-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);font-size:15px}.sum-row:last-child{border:none}.sum-row b{font-weight:700}
+/* Photo hero band */
+.photo{position:relative;height:290px;margin:-1px 0 0;overflow:hidden}
+.photo img{width:100%;height:100%;object-fit:cover;object-position:center 30%}
+.photo::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.15) 0%,rgba(10,10,10,.55) 55%,var(--bg) 100%)}
+/* Full hero (welcome) */
+.hero{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end}
+.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero .ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.3) 0%,rgba(10,10,10,.1) 35%,rgba(10,10,10,.75) 72%,var(--bg) 100%)}
+.hero .in{position:relative;padding:0 24px calc(20px + var(--safe-b))}
+.hero h1{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.hero p{margin-top:12px;font-size:16px;color:#D8D8DE;line-height:1.45}
+.stars{display:flex;align-items:center;gap:8px;margin:16px 0 20px;font-size:13px;color:var(--sec);font-weight:600}
+.stars b{color:var(--text)}
+/* Data-viz: muscle bars */
+.mbar{margin:11px 0}
+.mbar .lab{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}.mbar .lab .p{color:var(--muted);font-weight:700}
+.mtrack{height:9px;border-radius:9px;background:var(--container);overflow:hidden}
+.mtrack>i{display:block;height:100%;width:0;border-radius:9px;background:var(--brand);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+/* metric grid */
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.mcell{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:13px 14px}
+.mcell .k{font-size:12px;color:var(--muted);font-weight:600}.mcell .v{font-size:22px;font-weight:800;margin-top:3px;font-family:ui-rounded,-apple-system;letter-spacing:-.01em}
+/* Projection chart */
+.chart{margin-top:6px}
+/* Week split */
+.week{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+.day{display:flex;align-items:center;gap:12px;background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:12px 14px}
+.day .dd{width:38px;height:38px;border-radius:11px;background:var(--acc-soft);display:grid;place-items:center;font-size:13px;font-weight:800;color:var(--accent);flex:none}
+.day .dt{font-size:15px;font-weight:700}.day .ds{font-size:12.5px;color:var(--muted);margin-top:1px}
+/* Social proof */
+.rate{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.rate .rr{font-size:34px;font-weight:800;font-family:ui-rounded,-apple-system}
+.rate .rs{font-size:13px;color:var(--muted)}
+.quote{background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px}
+.quote .qt{font-size:14px;line-height:1.5}.quote .qa{font-size:12px;color:var(--muted);margin-top:8px;font-weight:600}
+/* Processing */
+.proc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;text-align:center}
+.ring{width:96px;height:96px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:8;stroke-linecap:round}
+.ring .bgc{stroke:var(--container)}.ring .fgc{stroke:url(#rg);transition:stroke-dashoffset .5s linear}
+.proc .pt{font-size:17px;font-weight:700}.proc .ps{font-size:13.5px;color:var(--muted);min-height:18px}
+/* Paywall extras */
+.pw-check{width:60px;height:60px;margin:2px auto 12px;border-radius:50%;background:var(--brand);display:grid;place-items:center;box-shadow:0 12px 34px rgba(0,0,0,.6)}
+.pw-check svg{width:28px;height:28px;color:#fff}
+.feat{display:flex;align-items:center;gap:12px;margin-bottom:12px}.feat .ic{width:30px;height:30px;border-radius:9px;background:var(--acc-soft);display:grid;place-items:center;flex:none;font-size:15px}.feat span{font-size:15px;font-weight:500}
+.tl{background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin:14px 0}
+.tlr{display:flex;gap:12px;padding:7px 0}.tlr .ti{width:28px;height:28px;border-radius:8px;background:var(--acc-soft);display:grid;place-items:center;flex:none;font-size:14px}
+.tlr .tt{font-size:13.5px;font-weight:700}.tlr .tsx{font-size:12px;color:var(--muted);margin-top:1px}
+.plan{position:relative;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-radius:var(--r-card);border:1.5px solid var(--border);background:var(--card);cursor:pointer;margin-bottom:10px;transition:.18s}
+.plan.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--acc-soft)}
+.plan .t{font-size:15px;font-weight:700}.plan .s{font-size:12.5px;color:var(--muted)}
+.plan .p{font-size:15px;font-weight:700;text-align:right}.plan .p small{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.plan .save{position:absolute;top:-9px;right:14px;font-size:10px;font-weight:700;color:#fff;background:var(--brand);padding:3px 9px;border-radius:999px}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.22);flex:none;display:grid;place-items:center;margin-left:12px}
+.plan.sel .radio::after{content:'';width:10px;height:10px;border-radius:50%;background:var(--brand)}
+.pwsoc{text-align:center;font-size:12px;color:var(--muted);margin-top:2px}
+.links{margin-top:10px;display:flex;justify-content:center;gap:6px;font-size:12px;color:var(--muted)}.links a{color:var(--muted);text-decoration:underline}
+/* ── Round 4: живые композиции ── */
+@keyframes bubin{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+.chatwrap{display:flex;flex-direction:column;gap:10px;padding:0 20px}
+.cbub{max-width:82%;padding:12px 15px;font-size:14.5px;line-height:1.45;border-radius:18px;border-bottom-left-radius:6px;background:var(--card2);border:1px solid var(--border);align-self:flex-start;opacity:0;animation:bubin .45s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:var(--d);box-shadow:0 10px 26px rgba(0,0,0,.35)}
+.cbub.me{align-self:flex-end;background:var(--brand);color:#fff;border:none;border-radius:18px;border-bottom-right-radius:6px;font-weight:600}
+.cbub .cavm{width:22px;height:22px;border-radius:7px;object-fit:cover;object-position:center 12%;vertical-align:-6px;margin-right:7px}
+.ctyping{display:inline-flex;gap:4px;padding:13px 15px}
+.ctyping i{width:6px;height:6px;border-radius:50%;background:var(--muted);opacity:.5;animation:blink 1.2s infinite}
+.ctyping i:nth-child(2){animation-delay:.2s}.ctyping i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.planupd{align-self:center;display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--acc-line);border-radius:14px;padding:11px 16px;font-size:13.5px;font-weight:700;opacity:0;animation:bubin .45s forwards;animation-delay:var(--d);box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.planupd .pu{color:var(--accent)}
+/* стопка карточек упражнений */
+.stackw{position:relative;height:320px;margin:6px 24px 0}
+@keyframes cardin{from{opacity:0;transform:translateY(18px) rotate(var(--rot))}to{opacity:1;transform:rotate(var(--rot))}}
+.scard{position:absolute;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:15px 16px;font-size:14.5px;font-weight:700;box-shadow:0 14px 34px rgba(0,0,0,.45);opacity:0;animation:cardin .5s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:var(--d)}
+.scard small{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:3px}
+.sdots{display:flex;gap:5px;margin-top:9px}
+.sdots i{flex:1;height:4px;border-radius:4px;background:var(--container)}
+.sdots i.on{background:var(--brand)}
+/* недельный ряд с чекмарками */
+.weekrow{display:flex;gap:7px;margin:2px 0 12px}
+.wd{flex:1;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:var(--card2);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted);position:relative}
+.wd.on{background:var(--brand);color:#fff;border:none}
+.wd.on::after{content:'✓';position:absolute;font-size:13px;font-weight:800}
+.wd.on span{display:none}
+.wd{opacity:0;animation:bubin .35s forwards;animation-delay:var(--d)}
+/* iOS-нотификация превью */
+.notif{display:flex;gap:11px;align-items:flex-start;background:rgba(38,38,42,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:13px 14px;box-shadow:0 18px 44px rgba(0,0,0,.55);opacity:0;animation:bubin .5s forwards;animation-delay:.3s}
+.notif .nicon{width:38px;height:38px;border-radius:9px;background:var(--brand);flex:none;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff}
+.notif .nt{font-size:12px;color:var(--muted);font-weight:600}
+.notif .nb{font-size:13.5px;line-height:1.4;margin-top:2px}
+/* лотти-контейнеры */
+.lotc{pointer-events:none}
+.confov{position:absolute;inset:0;pointer-events:none;z-index:40}
+/* staggered-появление опций/плиток/чипов — движение на каждом экране выбора */
+.opts .opt,.grid .tile{opacity:0;animation:bubin .38s cubic-bezier(.2,.8,.2,1) forwards}
+.opts .opt:nth-child(1),.grid .tile:nth-child(1){animation-delay:.05s}
+.opts .opt:nth-child(2),.grid .tile:nth-child(2){animation-delay:.13s}
+.opts .opt:nth-child(3),.grid .tile:nth-child(3){animation-delay:.21s}
+.opts .opt:nth-child(4),.grid .tile:nth-child(4){animation-delay:.29s}
+.opts .opt:nth-child(5),.grid .tile:nth-child(5){animation-delay:.37s}
+.opts .opt:nth-child(n+6),.grid .tile:nth-child(n+6){animation-delay:.45s}
+.chips .chip{opacity:0;animation:bubin .3s forwards}
+.chips .chip:nth-child(odd){animation-delay:.08s}.chips .chip:nth-child(even){animation-delay:.16s}
+.chips .chip:nth-child(n+7){animation-delay:.24s}
+.segbar,.segdesc{opacity:0;animation:bubin .4s forwards}.segbar{animation-delay:.08s}.segdesc{animation-delay:.22s}
+/* пульс цифры слайдера при изменении */
+.num .val{transition:transform .12s}.num .val.bump{transform:scale(1.06)}
+/* shimmer главного CTA на пейволе (бегущий блик) */
+@keyframes shim{0%{transform:translateX(-130%) skewX(-18deg)}100%{transform:translateX(230%) skewX(-18deg)}}
+.cta.shimmer{position:relative;overflow:hidden}
+.cta.shimmer::after{content:'';position:absolute;top:0;bottom:0;width:38%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);animation:shim 2.6s ease-in-out infinite}
+</style>
+</head><body>
+<svg width="0" height="0"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7F86DB"/><stop offset="1" stop-color="#BD62F4"/></linearGradient></defs></svg>
+<div class="wrap" id="wrap"></div>
+<!-- Скрытые триггеры Paywall.js: primary = годовая (продукт №1 в дашборде), secondary = месячная.
+     Видимый CTA роутит клик по выбранному плану; restore/close — служебные действия Superwall. -->
+<button class="pw-hidden" id="pw-buy-primary" data-pw-purchase="primary" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
+<button class="pw-hidden" id="pw-buy-secondary" data-pw-purchase="secondary" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
+<button class="pw-hidden" id="pw-restore" data-pw-restore style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
+<button class="pw-hidden" id="pw-close" data-pw-close style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
+<script>
+const COACHES=[
+ {id:'fai',name:'F/AI',title:'AI-тренер',a:'#7F86DB',b:'#BD62F4',desc:'AI-тренер нового поколения. Анализирует тренировки, адаптирует программу и ведёт к цели с научным подходом.',traits:['Наука','Адаптивность','Точность','Аналитика'],quote:'Данные не врут. Построим твой лучший результат вместе.'},
+ {id:'nurturing',name:'Миа',title:'Заботливый наставник',a:'#F28CA6',b:'#FFB3CC',desc:'Заботливый и понимающий наставник. Поддержит в трудную минуту и сделает путь к цели приятным.',traits:['Поддержка','Эмпатия','Терпение','Мотивация'],quote:'Ты молодец, что пришёл сегодня. Каждый шаг — уже победа!'},
+ {id:'drill',name:'Маркус',title:'Жёсткий тренер',a:'#73808C',b:'#99A6B3',desc:'Жёсткий тренер старой школы. Без оправданий — только максимум на каждой тренировке.',traits:['Дисциплина','Интенсивность','Требовательность','Сила воли'],quote:'Боль временна. Слабость остаётся навсегда. Вперёд!'},
+ {id:'demon',name:'Кай',title:'Внутренний демон',a:'#B333E6',b:'#E666FF',desc:'Дерзкий и беспощадно честный внутренний голос. Не даёт расслабиться и толкает превзойти себя.',traits:['Сарказм','Честность','Провокация','Дерзость'],quote:'Ещё один повтор. Или ты сдашься, как вчера?'},
+];
+function hexA(h,al){const n=parseInt(h.slice(1),16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${al})`;}
+// ── Lottie: реестр инстансов (destroy при смене экрана, чтобы rAF не текли) ──
+window.__lots=[];
+function destroyLots(){window.__lots.forEach(a=>{try{a.destroy();}catch(e){}});window.__lots=[];}
+function mountLottie(id,name,loop=true){
+  const el=document.getElementById(id);
+  if(!el||!window.lottie||!window.ANIMS)return null;
+  // animationData (инлайн из onb_anims.js) вместо path: WKWebView блокирует fetch file://.
+  const key=name.replace('onb_anim_','');
+  const data=ANIMS[key];
+  if(!data)return null;
+  try{const a=lottie.loadAnimation({container:el,renderer:'svg',loop,autoplay:true,animationData:JSON.parse(JSON.stringify(data))});window.__lots.push(a);return a;}
+  catch(e){return null;}
+}
+// Реплики тренеров для чат-демо (характер каждого).
+const COACH_CHAT={
+ fai:['Вижу прогресс по жиму: +7% за месяц. Сегодня добавим вес.','Готов? Разминка 5 минут — и начинаем.'],
+ nurturing:['Ты вчера отлично поработал! Как самочувствие?','Сегодня мягкая тренировка — восстановимся вместе 💜'],
+ drill:['Хватит скроллить. Зал ждёт.','3 подхода до отказа. Пошёл!'],
+ demon:['Опять отговорки? Вчерашний ты уже сильнее.','Докажи, что я ошибаюсь. 45 минут.']
+};
+function setCoach(c){const r=document.documentElement.style;r.setProperty('--accent',c.a);r.setProperty('--accent2',c.b);
+  r.setProperty('--brand',`linear-gradient(100deg,${c.a} 0%,${c.b} 100%)`);r.setProperty('--acc-soft',hexA(c.a,.16));r.setProperty('--acc-line',hexA(c.a,.45));}
+
+const weightGoal = a => a.goal==='lose_weight' || a.goal==='gain_muscle';
+const QT=['choice','num','date','multi','input','tags','seg'];
+const S=[
+ {id:'welcome',t:'hero'},
+ {id:'coach',t:'coach',title:['Выбери','AI-тренера'],sub:'Свайпай, чтобы выбрать. Тренер задаёт стиль и акцент.'},
+ {id:'chat_demo',t:'chatdemo',title:['Тренер, который','всегда на связи'],sub:'Отвечает мгновенно, помнит контекст и ведёт твой план.'},
+ {id:'goal',t:'choice',l:'grid',key:'goal',title:['Какая у тебя','главная цель?'],sub:'Программа соберётся под неё.',o:[['🏋️','Набор массы','gain_muscle'],['🔥','Похудение','lose_weight'],['❤️','Поддержание формы','stay_fit'],['⚡','Увеличение силы','strength']]},
+ {id:'motivation',t:'choice',l:'grid',key:'motivation',title:['Почему это','важно для тебя?'],sub:'Помогает удержать мотивацию.',o:[['📅','Событие впереди','event'],['❤️','Здоровье','health'],['✨','Уверенность','confidence'],['⚡','Энергия и тонус','energy'],['👨‍👩‍👧','Пример для близких','family']]},
+ {id:'stat_users',t:'stat'},
+ {id:'obstacle',t:'choice',key:'obstacle',title:['Что мешало','тебе раньше?'],o:[['⏰','Не хватало времени','time'],['🪫','Не было мотивации','motivation'],['❓','Не знал, как тренироваться','knowledge'],['⛑️','Травмы или здоровье','health'],['↩️','Срывался с режима','consistency']]},
+ {id:'attempts',t:'choice',key:'attempts',title:['Сколько раз','пробовал начать?'],sub:'Без осуждения — это поможет подобрать темп.',o:[['🌱','Впервые','first'],['🔁','1–2 раза','few'],['😮‍💨','Много раз, но бросал','many']]},
+ {id:'insight1',t:'insight'},
+ {id:'plan_stack',t:'stack',title:['ИИ уже прикидывает','твой план'],sub:'Каждый ответ уточняет программу под тебя.'},
+ {id:'experience',t:'seg',key:'experience',title:['Какой у тебя','опыт тренировок?'],seg:[['Новичок','beginner','Меньше 6 месяцев опыта. Начнём с базовой техники и плавной нагрузки.'],['Средний','intermediate','6 месяцев – 2 года. Добавим объём и прогрессию.'],['Опытный','advanced','2–5 лет стажа. Периодизация и акцентная работа.'],['Профи','expert','5+ лет. Тонкая настройка под твои цели.']]},
+ {id:'gender',t:'choice',l:'grid',key:'gender',title:['Укажи пол'],sub:'Нужно для точного расчёта нагрузки.',o:[['🧍','Мужской','male'],['🧍‍♀️','Женский','female']]},
+ {id:'health',t:'choice',l:'grid',key:'apple_health',title:['Подключить','Apple Health?'],sub:'Автоматически возьмём рост и вес.',o:[['❤️','Подключить','health'],['✍️','Ввести вручную','skip']]},
+ {id:'birthdate',t:'date',key:'birthdate',title:['Когда ты родился?'],sub:'Поможет точнее подобрать программу.'},
+ {id:'body_method',t:'choice',l:'grid',key:'body_method',title:['Как укажем','параметры тела?'],o:[['📷','Анализ по фото','photo'],['✍️','Ввести вручную','manual']]},
+ {id:'height',t:'num',key:'height',title:['Какой у тебя рост?'],min:140,max:220,def:175,unit:'см',when:a=>a.body_method!=='photo'},
+ {id:'weight',t:'num',key:'weight',title:['Сколько весишь сейчас?'],min:30,max:200,def:75,unit:'кг',when:a=>a.body_method!=='photo'},
+ {id:'target_weight',t:'num',key:'target_weight',title:['Какого веса','хочешь достичь?'],sub:'К нему построим план.',min:30,max:200,def:70,unit:'кг',when:weightGoal},
+ {id:'body_reveal',t:'reveal',title:['Проанализировал','твоё тело']},
+ {id:'days',t:'num',key:'days',title:['Сколько дней','в неделю?'],sub:'Твой тренировочный режим.',min:1,max:6,def:3,unit:'дн/нед'},
+ {id:'duration',t:'seg',key:'duration',title:['Сколько времени','на тренировку?'],seg:[['30 мин','30','Короткие эффективные сессии — легко встроить в день.'],['45 мин','45','Оптимальный баланс объёма и времени.'],['60 мин','60','Полноценная тренировка с разминкой и заминкой.'],['90 мин','90','Максимальный объём для быстрого прогресса.']]},
+ {id:'sleep',t:'seg',key:'sleep',title:['Сколько обычно','спишь?'],sub:'Влияет на восстановление.',seg:[['<6 ч','lt6','Мало сна — снизим объём, чтобы не перегружать восстановление.'],['6–7 ч','6_7','Ближе к нижней границе нормы — сбалансируем нагрузку.'],['7–8 ч','7_8','Отличное восстановление — можно работать в полную силу.'],['>8 ч','gt8','Много сна — тело успевает хорошо восстанавливаться.']]},
+ {id:'recovery',t:'seg',key:'recovery',title:['Как','восстанавливаешься?'],seg:[['Легко','easy','Быстро приходишь в форму — добавим интенсивности.'],['Норма','ok','Обычный темп — сбалансированный план.'],['Устаю','tired','Часто устаёшь — заложим больше отдыха между подходами.'],['Стресс','stress','Высокий стресс — начнём мягко, со щадящей нагрузкой.']]},
+ {id:'area',t:'choice',l:'grid',key:'area',title:['Где ты','тренируешься?'],o:[['🏠','Дома','home'],['🏋️','В зале','gym'],['🌳','На улице','street']]},
+ {id:'equipment',t:'multi',key:'equipment',title:['Какое оборудование','доступно?'],sub:'Выбери всё, что есть — или пропусти.',groups:[['Свободные веса',['Штанга','Гантели','Гири','EZ-гриф']],['Тренажёры',['Блочный тренажёр','Тренажёр Смита','Leg press','Кроссовер']],['Кардио',['Беговая дорожка','Велотренажёр','Эллиптический','Гребной']],['Другое',['Резинки','TRX-петли','Ролик для пресса','Турник']]]},
+ {id:'injuries',t:'tags',key:'injuries',opt:true,title:['Есть травмы','или ограничения?'],sub:'Отметь или впиши — учту в программе.',chips:['Колено','Спина / поясница','Плечо','Локоть','Запястье','Шея','Голеностоп'],ph:'Другое…',skip:'Нет травм'},
+ {id:'comment',t:'tags',key:'comment',opt:true,title:['Есть пожелания','к программе?'],sub:'Отметь или впиши свои.',chips:['Акцент на верх тела','Акцент на низ / ноги','Больше кардио','Меньше кардио','Проблемные зоны','Минимум прыжков'],ph:'Своё пожелание…',skip:'Пропустить'},
+ {id:'commitment',t:'commit',title:['Готов','начать меняться?']},
+ {id:'awards',t:'awards',title:['Нам','доверяют']},
+ {id:'proof',t:'proof',title:['Ты','в хорошей компании']},
+ {id:'processing',t:'processing',title:['']},
+ {id:'plan',t:'plan',title:['']},
+ {id:'paywall',t:'paywall',title:['']},
+];
+const A={}; let hist=[]; let cur=-1;
+const route=()=>S.filter(s=>!s.when||s.when(A));
+const wrap=document.getElementById('wrap');
+const GL={gain_muscle:'набора массы',lose_weight:'похудения',stay_fit:'поддержания формы',strength:'силы'};
+const GLN={gain_muscle:'Набор массы',lose_weight:'Похудение',stay_fit:'Поддержание формы',strength:'Сила'};
+
+function idxInRoute(){const r=route();return r.findIndex(s=>s.id===S[cur]?.id);}
+function progFrac(){const r=route();const i=idxInRoute();const planI=r.findIndex(s=>s.id==='plan');const denom=planI>0?planI:r.length-1;return Math.min(1,Math.max(0,i/denom));}
+function questionsLeft(){const r=route();const i=idxInRoute();const planI=r.findIndex(s=>s.id==='plan');let n=0;for(let k=i+1;k<planI;k++){if(QT.includes(r[k].t))n++;}return n;}
+
+function next(){let j=cur+1;while(j<S.length&&S[j].when&&!S[j].when(A))j++;go(j);}
+function back(){if(hist.length){cur=hist.pop();render();}}
+function go(i){if(i>cur&&cur>=0)hist.push(cur);cur=i;if(cur>=S.length){done();return;}render();}
+function commit(key,val){if(key)A[key]=val;next();}
+
+function topBar(showHint){
+  const w=Math.round(Math.pow(progFrac(),1.35)*100); // медленный старт (Noom-трюк)
+  const ql=questionsLeft();
+  // Ресёрч (Noom): в начале длину маскируем («≈2 минуты»), число вопросов — ближе к концу.
+  let hint='';
+  if(showHint&&ql>0){
+    const txt=ql>10?'≈ 2 минуты до твоей программы'
+      :(ql>3?`Ещё ${ql} ${plural(ql,'вопрос','вопроса','вопросов')} до твоей программы`
+      :`Почти готово — ${ql} ${plural(ql,'вопрос','вопроса','вопросов')}`);
+    hint=`<div class="hint">${txt}</div>`;
+  }
+  return `<div class="top"><div class="back" onclick="back()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="bar"><i style="width:${w}%"></i></div></div>${hint}`;
+}
+function plural(n,a,b,c){const m=n%100;if(m>=11&&m<=14)return c;const d=n%10;return d===1?a:(d>=2&&d<=4?b:c);}
+// Блоки воронки: структура «глава · N/4» вместо безликой ленты вопросов.
+const SECTIONS=[
+  {name:'ЗНАКОМСТВО',n:1,ids:['goal','motivation','obstacle','attempts','experience']},
+  {name:'ТВОЁ ТЕЛО',n:2,ids:['gender','health','birthdate','body_method','height','weight','target_weight']},
+  {name:'ТВОЙ РЕЖИМ',n:3,ids:['days','duration','sleep','recovery','area','equipment','injuries','comment']},
+  {name:'ФИНАЛ',n:4,ids:['commitment']},
+];
+function secLabel(s){const sec=SECTIONS.find(x=>x.ids.includes(s.id));return sec?`<div class="secl">${sec.name} · ${sec.n} / 4</div>`:'';}
+// Правило заголовков: двухстрочные — белый + градиент-акцент; одиночные — белые (без градиента).
+function headBlock(s){const t=s.title.length>1?`${s.title[0]}<br><span class="g">${s.title[1]}</span>`:s.title[0];return secLabel(s)+`<div class="head"><div class="title">${t}</div>${s.sub?`<div class="sub">${s.sub}</div>`:''}</div>`;}
+function pickCoach(i){setCoach(COACHES[i]);A.coach=COACHES[i].id;next();}
+function segPick(i){window.segV=window.__seg[i][1];[...document.querySelectorAll('#segbar button')].forEach((b,k)=>b.classList.toggle('sel',k===i));document.getElementById('segdesc').textContent=window.__seg[i][2];}
+// Flash выбранного состояния перед переходом — тактильное подтверждение тапа.
+function pickFlash(el,key,val){el.classList.add('sel');setTimeout(()=>commit(key,val),180);}
+// Монохромные SVG-иконки (ключ `stepKey:value`) — премиальнее разнобойных эмодзи.
+const ICONS={
+ 'goal:gain_muscle':'<rect x="2" y="9" width="4" height="6" rx="1"/><rect x="18" y="9" width="4" height="6" rx="1"/><path d="M6 12h12"/>',
+ 'goal:lose_weight':'<path d="M12 2s6 6 6 11a6 6 0 0 1-12 0c0-2 .8-3.8 2-5.2 0 0 .5 2.2 2 2.2C10 8 12 5 12 2z"/>',
+ 'goal:stay_fit':'<path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>',
+ 'goal:strength':'<path d="M13 2L4 14h6l-1 8 9-12h-6z"/>',
+ 'motivation:event':'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+ 'motivation:health':'<path d="M19.5 12.7L12 20l-7.5-7.3a5 5 0 1 1 7.5-6.6 5 5 0 1 1 7.5 6.6z"/><path d="M6 12h3l1.5-2 2.5 4 1.5-2H18"/>',
+ 'motivation:confidence':'<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/>',
+ 'motivation:energy':'<path d="M13 2L4 14h6l-1 8 9-12h-6z"/>',
+ 'motivation:family':'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.8"/><path d="M16.5 15.2c2.6.3 4.4 1.9 5 4.8"/>',
+ 'obstacle:time':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ 'obstacle:motivation':'<rect x="2" y="8" width="16" height="8" rx="2"/><path d="M22 11v2"/><path d="M5.5 11v2"/>',
+ 'obstacle:knowledge':'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.1 1-1.1 1.8"/><path d="M12 16.6h.01"/>',
+ 'obstacle:health':'<rect x="4" y="6" width="16" height="14" rx="2"/><path d="M9 6V4h6v2"/><path d="M12 10v6M9 13h6"/>',
+ 'obstacle:consistency':'<path d="M4 10h9a5 5 0 1 1 0 10H8"/><path d="M8 6l-4 4 4 4"/>',
+ 'attempts:first':'<path d="M12 21v-7"/><path d="M12 14c0-3-2.5-5-6-5 0 3.5 2.5 5 6 5z"/><path d="M12 12c0-3.5 2.5-6 7-6 0 4-2.5 6-7 6z"/>',
+ 'attempts:few':'<path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+ 'attempts:many':'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>',
+ 'gender:male':'<circle cx="10" cy="14" r="6"/><path d="M14.5 9.5L21 3M15 3h6v6"/>',
+ 'gender:female':'<circle cx="12" cy="8" r="5.5"/><path d="M12 13.5V21M8.5 18h7"/>',
+ 'apple_health:health':'<path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>',
+ 'apple_health:skip':'<path d="M17 3l4 4L8 20l-5 1 1-5z"/>',
+ 'body_method:photo':'<rect x="3" y="7" width="18" height="14" rx="3"/><circle cx="12" cy="14" r="4"/><path d="M9 7l1.5-3h3L15 7"/>',
+ 'body_method:manual':'<path d="M17 3l4 4L8 20l-5 1 1-5z"/>',
+ 'area:home':'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
+ 'area:gym':'<rect x="2" y="9" width="4" height="6" rx="1"/><rect x="18" y="9" width="4" height="6" rx="1"/><path d="M6 12h12"/>',
+ 'area:street':'<path d="M12 22v-4"/><path d="M12 3l5 6h-3l4 5H6l4-5H7z"/>',
+};
+function iconFor(s,o){const p=ICONS[s.key+':'+o[2]];return p?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`:o[0];}
+// Слайдер: обновляет значение и градиентную заливку трека (--p) + микро-bump цифры.
+function numUpd(r,unit){const p=(r.value-r.min)/(r.max-r.min)*100;r.style.setProperty('--p',p+'%');const v=document.getElementById('val');v.innerHTML=r.value+' <small>'+unit+'</small>';v.classList.add('bump');clearTimeout(window.__bt);window.__bt=setTimeout(()=>v.classList.remove('bump'),130);}
+// Празднование обещания: оверлей с лотти-галочкой, затем переход дальше.
+function commitCelebrate(){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(10,10,10,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:fadein .25s both';
+  ov.innerHTML='<div id="lotcommit" style="width:170px;height:170px"></div>';
+  document.body.appendChild(ov);
+  mountLottie('lotcommit','onb_anim_check_pop',false);
+  setTimeout(()=>{ov.remove();next();},1050);
+}
+
+// Секционные фоны: слабый радиальный градиент в акценте, позиция меняется по блокам.
+function sectionBg(s){
+  const sec=SECTIONS.find(x=>x.ids.includes(s.id));
+  const a=hexA(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#7F86DB',.07);
+  const pos={1:'18% -8%',2:'50% -6%',3:'82% -8%',4:'50% 110%'}[sec?sec.n:0]||null;
+  wrap.style.background=pos?`radial-gradient(70% 42% at ${pos}, ${a}, transparent 70%)`:'';
+}
+function render(){
+  destroyLots();
+  const s=S[cur];
+  sectionBg(s);
+  if(s.t==='hero')return renderHero();
+  if(s.t==='coach')return renderCoach();
+  if(s.t==='processing')return renderProcessing();
+  if(s.t==='plan')return renderPlan();
+  if(s.t==='paywall')return renderPaywall();
+  let body='',foot='';
+  if(s.t==='choice'){
+    if(s.l==='grid'){
+      body='<div class="grid">'+s.o.map(o=>`<button class="tile" onclick="pickFlash(this,'${s.key}','${o[2]}')"><span class="te">${iconFor(s,o)}</span><span class="tlb">${o[1]}</span></button>`).join('')+'</div>';
+    } else {
+      body='<div class="opts">'+s.o.map(o=>`<button class="opt" onclick="pickFlash(this,'${s.key}','${o[2]}')"><span class="ic">${iconFor(s,o)}</span><span class="lbl">${o[1]}</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>`).join('')+'</div>';
+    }
+  } else if(s.t==='seg'){
+    window.__seg=s.seg;window.segV=s.seg[0][1];
+    body=`<div class="seg"><div class="segbar" id="segbar">${s.seg.map((o,i)=>`<button class="${i===0?'sel':''}" onclick="segPick(${i})">${o[0]}</button>`).join('')}</div><div class="segdesc" id="segdesc">${s.seg[0][2]}</div></div>`;
+    foot=`<button class="cta" onclick="commit('${s.key}',window.segV)"><span>Далее</span></button>`;
+  } else if(s.t==='input'){
+    body=`<div class="field"><input id="inp" placeholder="${s.ph}"/></div>`;
+    foot=`<button class="cta" onclick="(function(){var v=document.getElementById('inp').value.trim();if(!v&&!${!!s.opt})return;commit('${s.key}',v);})()"><span>Далее</span></button>`+(s.opt?`<button class="ghost" onclick="commit('${s.key}','')">${s.skip}</button>`:'');
+  } else if(s.t==='num'){
+    const p0=(s.def-s.min)/(s.max-s.min)*100;
+    body=`<div class="num"><div class="val" id="val">${s.def} <small>${s.unit}</small></div><input type="range" min="${s.min}" max="${s.max}" value="${s.def}" style="--p:${p0}%" oninput="numUpd(this,'${s.unit}')"/><div class="numlab"><span>${s.min}</span><span>${s.max}</span></div></div>`;
+    foot=`<button class="cta" onclick="commit('${s.key}',parseInt(document.querySelector('input[type=range]').value))"><span>Далее</span></button>`;
+  } else if(s.t==='date'){
+    body=`<div class="datew"><input type="date" id="inp" value="2000-01-01" max="2012-01-01"/></div>`;
+    foot=`<button class="cta" onclick="(function(){var v=document.getElementById('inp').value;if(!v)return;commit('${s.key}',v);})()"><span>Далее</span></button>`;
+  } else if(s.t==='multi'){
+    if(s.groups){
+      body=s.groups.map(([name,items],gi)=>`<div class="sec-l" style="margin:${gi?14:0}px 20px 8px">${name.toUpperCase()}</div><div class="chips">${items.map(o=>`<button class="chip" onclick="this.classList.toggle('sel')">${o}</button>`).join('')}</div>`).join('');
+    } else {
+      body='<div class="chips">'+s.o.map(o=>`<button class="chip" onclick="this.classList.toggle('sel')">${o}</button>`).join('')+'</div>';
+    }
+    foot=`<button class="cta" id="cta" onclick="(function(){var sel=[...document.querySelectorAll('.chip.sel')].map(e=>e.textContent);commit('${s.key}',sel);})()"><span>Только своё тело</span></button>`;
+  } else if(s.t==='reveal'){
+    body=revealBody();foot=`<button class="cta" onclick="next()"><span>Дальше</span></button>`;
+  } else if(s.t==='commit'){
+    const c=COACHES.find(x=>x.id===A.coach)||COACHES[0];
+    const focus={gain_muscle:'грудь и трицепс',lose_weight:'всё тело + кардио',strength:'присед, силовой день'}[A.goal]||'всё тело';
+    body=`<div class="photo"><img src="onb_plan_reveal.jpg" style="object-position:center 12%"/></div>
+    <div style="margin-top:-64px;position:relative;padding:0 20px">
+      <div class="notif"><div class="nicon">F/AI</div><div><div class="nt">F/AI · сейчас</div><div class="nb"><b>${c.name}:</b> Сегодня тренировка — ${focus}! 💪</div></div></div>
+    </div>
+    <div class="card" style="margin-top:14px"><h3>🔥 Мини-обещание</h3><div style="font-size:14.5px;line-height:1.5;color:var(--sec)">Прогресс — это привычка. Обещаешь себе тренироваться <b style="color:var(--text)">${A.days||3} ${plural(A.days||3,'раз','раза','раз')} в неделю</b> ближайший месяц? ${c.name} будет напоминать.</div></div>`;
+    foot=`<button class="cta" onclick="commitCelebrate()"><span>Обещаю 💪</span></button>`;
+  } else if(s.t==='proof'){
+    body=proofBody();foot=`<button class="cta" onclick="next()"><span>Продолжить</span></button>`;
+  } else if(s.t==='stat'){
+    body=`<div class="photo"><img src="onb_community.jpg"/></div><div style="text-align:center;margin-top:-24px;position:relative;padding:0 24px"><div class="statn">300 000+</div><div style="font-size:18px;font-weight:700;margin-top:6px">пользователей уже тренируются</div><div class="sub" style="margin-top:8px">Присоединяйся к сообществу F/AI — соберём программу под тебя.</div></div>`;
+    foot=`<button class="cta" onclick="next()"><span>Дальше</span></button>`;
+  } else if(s.t==='awards'){
+    body=`<div class="pad">
+      <div class="badge"><span class="bi">🏆</span><div><div class="bt">Победитель спортех-акселератора Сколково</div><div class="bs">Отбор и поддержка спортивных технологий</div></div></div>
+      <div class="badge"><span class="bi">🥇</span><div><div class="bt">«Лучшая спортивная технология»</div><div class="bs">Награда Startech Awards</div></div></div></div>
+      <div class="sec-l">О НАС ПИШУТ</div>
+      <div class="pad"><div class="press"><div class="pchip">Издание · скоро</div><div class="pchip">Издание · скоро</div><div class="pchip">Издание · скоро</div></div></div>`;
+    foot=`<button class="cta" onclick="next()"><span>Продолжить</span></button>`;
+  } else if(s.t==='insight'){
+    body=insightBody();foot=`<button class="cta" onclick="next()"><span>Дальше</span></button>`;
+  } else if(s.t==='chatdemo'){
+    const c=COACHES.find(x=>x.id===A.coach)||COACHES[0];
+    const m=COACH_CHAT[c.id]||COACH_CHAT.fai;
+    body=`<div class="sp"></div><div class="chatwrap">
+      <div class="cbub" style="--d:.2s"><img class="cavm" src="onb_coach_${c.id}.jpg"/>${m[0]}</div>
+      <div class="cbub me" style="--d:1s">Погнали 💪</div>
+      <div class="cbub" style="--d:1.7s">${m[1]}</div>
+      <div class="cbub ctyping" style="--d:2.5s"><i></i><i></i><i></i></div>
+      <div class="planupd" style="--d:3.1s"><span>📋</span> План обновлён <span class="pu">✓</span></div>
+    </div><div class="sp"></div>`;
+    foot=`<button class="cta" onclick="next()"><span>Дальше</span></button>`;
+  } else if(s.t==='stack'){
+    const ex=[['Жим лёжа','4 подхода · 8 повт.',-7,0],['Приседания со штангой','4 подхода · 6 повт.',5,78],['Тяга верхнего блока','3 подхода · 10 повт.',-4,156],['Подъём на бицепс','3 подхода · 12 повт.',3,234]];
+    body=`<div class="sp"></div><div class="stackw">`+ex.map((e,i)=>`<div class="scard" style="--d:${.25+i*.35}s;--rot:${e[2]}deg;top:${e[3]}px">${e[0]}<small>${e[1]}</small>${i===3?'<div class="sdots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>':''}</div>`).join('')+`</div><div class="sp"></div>`;
+    foot=`<button class="cta" onclick="next()"><span>Дальше</span></button>`;
+  } else if(s.t==='tags'){
+    body=tagsBody(s);
+    foot=`<button class="cta" onclick="submitTags('${s.key}')"><span>Далее</span></button>`+(s.opt?`<button class="ghost" onclick="commit('${s.key}',[])">${s.skip}</button>`:'');
+  }
+  const showHint=QT.includes(s.t);
+  const headHtml=(s.t==='stat'||s.t==='insight')?'':headBlock(s);
+  // Пульсирующее сердце на Apple Health (лотти) — над плитками.
+  if(s.id==='health'){
+    body=`<div style="display:flex;justify-content:center"><div id="lothealth" class="lotc" style="width:112px;height:112px"></div></div>`+body;
+  }
+  // Короткие экраны центрируем вертикально (спейсеры сжимаются при переполнении).
+  const center=['num','date','seg','insight'].includes(s.t)||(s.t==='choice'&&s.l==='grid'&&s.o.length<=4);
+  if(center)body='<div class="sp"></div>'+body+'<div class="sp"></div><div class="sp"></div>';
+  // Блюр-фон для Apple Health (Motra-паттерн) — ПРЕ-блюренная картинка (CSS filter на iOS
+  // поднимает композитный слой поверх контента — заголовок «тонул» под блюром).
+  const pre=(s.id==='health')?`<div style="position:absolute;inset:0;overflow:hidden;z-index:-1"><img src="onb_body_scan_blur.jpg" style="width:100%;height:100%;object-fit:cover;opacity:.55"/></div>`:'';
+  wrap.innerHTML=pre+topBar(showHint)+headHtml+`<div class="scroll">${body}<div style="height:12px"></div></div>`+(foot?`<div class="foot">${foot}</div>`:'');
+  if(s.id==='health')mountLottie('lothealth','onb_anim_heart_beat',true);
+  if(s.t==='multi')wrap.addEventListener('click',()=>{const n=document.querySelectorAll('.chip.sel').length;const c=document.getElementById('cta');if(c)c.querySelector('span').textContent=n?('Готово ('+n+')'):'Только своё тело';});
+  if(s.t==='reveal')animBars();
+  const inp=document.getElementById('inp');if(inp&&s.t==='input')setTimeout(()=>inp.focus(),60);
+}
+
+function renderCoach(){
+  // Полноэкранный выбор персонажа: фото на весь экран, инфо поверх градиента, точки + CTA снизу.
+  const slides=COACHES.map((c,i)=>`<div class="cslide">
+    <img src="onb_coach_${c.id}.jpg" alt=""/>
+    <div class="cgrad"></div>
+    <div class="cinfo">
+      <div class="cn">${c.name}</div><div class="ct">${c.title}</div>
+      <div class="cd">${c.desc}</div>
+      <div class="ctraits">${c.traits.map(t=>`<span class="ctag">${t}</span>`).join('')}</div>
+      <div class="cquote">«${c.quote}»</div>
+    </div>
+  </div>`).join('');
+  const dots=COACHES.map((c,i)=>`<span class="dot${i===0?' on':''}"></span>`).join('');
+  wrap.innerHTML=`<div class="gamesel" id="car">${slides}</div>
+    <div class="ctop"><div class="back" onclick="back()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ctt">Выбери AI-тренера</div><div class="csp"></div></div>
+    <div class="csub">Свайпай, чтобы выбрать</div>
+    <div class="cfoot"><div class="dots">${dots}</div><button class="cta" id="ccta" onclick="pickCoach(window.coachIdx||0)"><span>Выбрать ${COACHES[0].name}</span></button></div>`;
+  window.coachIdx=0;
+  const car=document.getElementById('car');
+  const upd=()=>{const w=car.clientWidth;const i=Math.max(0,Math.min(COACHES.length-1,Math.round(car.scrollLeft/w)));if(i===window.coachIdx)return;window.coachIdx=i;setCoach(COACHES[i]);[...document.querySelectorAll('.dot')].forEach((d,k)=>d.classList.toggle('on',k===i));document.querySelector('#ccta span').textContent='Выбрать '+COACHES[i].name;};
+  car.addEventListener('scroll',()=>{clearTimeout(window.__ct);window.__ct=setTimeout(upd,50);});
+}
+
+function renderHero(){
+  wrap.innerHTML=`<div class="hero"><img src="onb_hero_welcome.jpg"/><div class="ov"></div><div class="in">
+    <h1>Твой AI-тренер<br>уже <span class="g">ждёт</span></h1>
+    <p>Ответь на пару вопросов — соберём персональную программу тренировок под тебя за 2 минуты.</p>
+    <div id="lotwel" class="lotc" style="height:46px;margin:2px 0 0"></div>
+    <div class="stars">★ <b>4.4</b> в App Store · <b>300&nbsp;000+</b> пользователей</div>
+    <button class="cta" onclick="next()"><span>Начать</span></button>
+  </div></div>`;
+  mountLottie('lotwel','onb_anim_ai_pulse',true);
+}
+
+// Data-viz: мышечный фокус по цели
+function muscleFocus(){
+  const g=A.goal;
+  if(g==='gain_muscle')return[['Грудь',22],['Спина',24],['Ноги',26],['Плечи',16],['Руки',12]];
+  if(g==='lose_weight')return[['Кардио',30],['Ноги',24],['Кор',20],['Спина',14],['Грудь',12]];
+  if(g==='strength')return[['Ноги',28],['Спина',24],['Грудь',22],['Плечи',14],['Руки',12]];
+  return[['Всё тело',26],['Ноги',22],['Спина',20],['Грудь',18],['Кор',14]];
+}
+function revealBody(){
+  const age=A.birthdate?(2026-parseInt(A.birthdate.slice(0,4))):'—';
+  const bars=muscleFocus().map(m=>`<div class="mbar"><div class="lab"><span>${m[0]}</span><span class="p">${m[1]}%</span></div><div class="mtrack"><i data-w="${m[1]*3.4}"></i></div></div>`).join('');
+  return `<div class="photo"><img src="onb_body_scan.jpg" style="object-position:center 20%"/></div>
+  <div class="card" style="margin-top:-46px;position:relative">
+    <div class="mgrid">
+      <div class="mcell"><div class="k">Возраст</div><div class="v">${age}</div></div>
+      <div class="mcell"><div class="k">Рост · Вес</div><div class="v">${A.height||'—'}·${A.weight||'—'}</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;margin-bottom:4px">ФОКУС ПРОГРАММЫ</div>
+    ${bars}
+  </div>`;
+}
+function animBars(){setTimeout(()=>document.querySelectorAll('.mtrack>i').forEach(i=>i.style.width=Math.min(100,i.dataset.w)+'%'),120);}
+
+function proofBody(){
+  // Только реальные данные: рейтинг App Store (4.4, ~900 оценок), реальный отзыв, 300k users.
+  return `<div class="card"><div class="rate"><div class="rr">4.4</div><div><div style="color:#FFC53D;font-size:15px">★★★★<span style="opacity:.35">★</span></div><div class="rs">900+ оценок в App Store</div></div></div>
+    <div class="quote"><div class="qt">«Отличное приложение для любителей спорта. Грамотные тренировочные планы 👌»</div><div class="qa">— Alina Tol, App Store</div></div>
+    <div style="text-align:center;font-size:14px;color:var(--sec);margin-top:12px"><b style="color:var(--text)">300 000+ пользователей</b> в App Store, Google Play и RuStore</div></div>`;
+}
+
+function insightBody(){
+  const c=COACHES.find(x=>x.id===A.coach)||COACHES[0];
+  const at=A.attempts;let msg;
+  if(at==='many')msg='Срывался раньше — это нормально. В этот раз соберём программу под твой реальный ритм, чтобы её было легко держать.';
+  else if(at==='few')msg='У тебя уже есть опыт стартов. Добавим структуру и прогрессию — и результат станет предсказуемым.';
+  else msg='Отличное начало! Поведём тебя пошагово — без перегруза и с понятным планом на каждый день.';
+  return `<div class="card" style="text-align:center;padding:28px 22px">
+    <img src="onb_coach_${c.id}.jpg" style="width:64px;height:64px;border-radius:20px;object-fit:cover;object-position:center 12%;margin:0 auto 12px;display:block;box-shadow:0 10px 26px rgba(0,0,0,.5)"/>
+    <div style="font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;margin-bottom:10px">${c.name.toUpperCase()}</div>
+    <h3 style="margin-bottom:8px">Слышу тебя 💜</h3>
+    <div style="font-size:15px;line-height:1.55;color:var(--sec)">${msg}</div></div>`;
+}
+function tagsBody(s){
+  const chips=s.chips.map(c=>`<button class="chip" onclick="this.classList.toggle('sel')">${c}</button>`).join('');
+  return `<div class="chips">${chips}</div><div class="field" style="margin-top:14px"><input id="inp" placeholder="${s.ph}"/></div>`;
+}
+function submitTags(key){
+  const sel=[...document.querySelectorAll('.chip.sel')].map(e=>e.textContent);
+  const txt=(document.getElementById('inp').value||'').trim();
+  const all=[...sel];if(txt)all.push(txt);
+  commit(key,all);
+}
+
+// Processing theater — двухфазный (Motra-паттерн: огромная анимация по центру, текст внизу).
+// Фаза 1: дышащее кольцо-лоадер + смена статусов. Фаза 2: дот-матрица силуэта «Персонализирую…».
+function renderProcessing(){
+  const cnt=Object.keys(A).length;
+  const eq=(Array.isArray(A.equipment)&&A.equipment.length)?A.equipment.slice(0,2).join(', '):'своё тело';
+  const rec={easy:'быстрое восстановление',ok:'обычный темп',tired:'бережную нагрузку',stress:'мягкий старт'}[A.recovery]||'твой ритм';
+  const phases=[`Анализирую твои ${cnt} ответов…`,`Подбираю упражнения под ${eq}…`,`Балансирую нагрузку под ${rec}…`];
+  wrap.innerHTML=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
+      <div id="lotproc" class="lotc" style="width:280px;height:280px"></div>
+    </div>
+    <div style="padding:0 24px calc(34px + var(--safe-b));text-align:center">
+      <div class="ps" id="ps" style="font-size:13.5px;color:var(--muted);min-height:18px"></div>
+    </div>`;
+  mountLottie('lotproc','onb_anim_ring_breathe',true);
+  const ps=document.getElementById('ps');
+  let i=0;
+  const step=()=>{
+    if(i<phases.length){ps.textContent=phases[i];i++;setTimeout(step,900);return;}
+    // Фаза 2: дот-силуэт
+    destroyLots();
+    const el=document.getElementById('lotproc');
+    if(el){el.style.width='320px';el.style.height='438px';}
+    mountLottie('lotproc','onb_anim_dots_figure',false);
+    ps.textContent='Персонализирую программу под тебя…';
+    setTimeout(()=>next(),2300);
+  };
+  step();
+}
+
+// Plan reveal
+function weekSplit(){
+  const d=A.days||3;const g=A.goal;
+  let tmpl;
+  if(g==='lose_weight')tmpl=[['Всё тело + кардио'],['HIIT + кор'],['Низ тела'],['Верх тела'],['Кардио + кор'],['Всё тело']];
+  else if(g==='strength')tmpl=[['Присед · сила'],['Жим · сила'],['Тяга · сила'],['Присед · объём'],['Жим · объём'],['Аксессуары']];
+  else tmpl=[['Грудь + Трицепс'],['Спина + Бицепс'],['Ноги + Плечи'],['Верх тела'],['Низ тела'],['Всё тело']];
+  // Дни распределяются с отдыхом между тренировками (а не подряд).
+  const DAYS={1:['ПН'],2:['ПН','ЧТ'],3:['ПН','СР','ПТ'],4:['ПН','ВТ','ЧТ','ПТ'],5:['ПН','ВТ','СР','ЧТ','ПТ'],6:['ПН','ВТ','СР','ЧТ','ПТ','СБ']}[Math.min(6,Math.max(1,d))];
+  return DAYS.map((day,i)=>[day,tmpl[i%tmpl.length][0]]);
+}
+function projChart(){
+  // линия старт→цель за 12 недель
+  const up=A.goal==='gain_muscle'||A.goal==='strength';const down=A.goal==='lose_weight';
+  const pts=[];for(let i=0;i<=12;i++){let y;if(down)y=70-(i/12)*42;else if(up)y=70-(i/12)*46;else y=64-(i/12)*30;pts.push([8+i*(300/12),y+8]);}
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(0)+' '+p[1].toFixed(0)).join(' ');
+  const area=`M8 118 `+pts.map(p=>'L'+p[0].toFixed(0)+' '+p[1].toFixed(0)).join(' ')+` L308 118 Z`;
+  const label=down?'−'+((A.weight||80)-(A.target_weight||72))+' кг':(up?'+сила и объём':'форма и тонус');
+  return `<svg class="chart" viewBox="0 0 316 128" width="100%"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#ag)"/><path d="${d}" fill="none" stroke="url(#rg)" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="${pts[12][0]}" cy="${pts[12][1]}" r="5" fill="var(--accent2)"/>
+    <text x="8" y="14" fill="var(--muted)" font-size="11" font-family="-apple-system">Сегодня</text>
+    <text x="250" y="14" fill="var(--text)" font-size="12" font-weight="700" font-family="-apple-system">12 нед · ${label}</text></svg>`;
+}
+function renderPlan(){
+  const nm=A.name?`, ${A.name}`:'';
+  const split=weekSplit();
+  const onDays=split.map(w=>w[0]);
+  const WD=['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
+  const weekrow=WD.map((d,i)=>`<div class="wd${onDays.includes(d)?' on':''}" style="--d:${.4+i*.12}s"><span>${d}</span></div>`).join('');
+  const days=split.map(w=>`<div class="day"><div class="dd">${w[0]}</div><div><div class="dt">${w[1]}</div><div class="ds">${A.duration||45} мин · ${(A.area==='home'?'дома':A.area==='street'?'на улице':'в зале')}</div></div></div>`).join('');
+  wrap.innerHTML=`${topBar(false)}
+  <div class="confov" id="confov"></div>
+  <div class="scroll">
+    <div class="head" style="padding-top:6px"><div class="title">Готово${nm}!<br><span class="g">Твоя программа собрана</span></div><div class="sub">На основе твоих ${Object.keys(A).length} ответов. Цель — ${GL[A.goal]||'твоя форма'}.</div></div>
+    <div class="card"><div style="font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;margin-bottom:10px">ТВОЯ НЕДЕЛЯ · ${A.days||3} ${plural(A.days||3,'тренировка','тренировки','тренировок')}</div><div class="weekrow">${weekrow}</div><div class="week">${days}</div></div>
+    <div class="card" style="margin-top:12px"><div style="font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;margin-bottom:8px">ПРОГНОЗ · 12 НЕДЕЛЬ</div>${projChart()}</div>
+    <div style="height:8px"></div>
+  </div>
+  <div class="foot"><button class="cta" onclick="next()"><span>Открыть программу 🚀</span></button></div>`;
+  mountLottie('confov','onb_anim_confetti',false); // одноразовое конфетти (aha-момент)
+}
+
+// Paywall
+let plan='yearly';
+function renderPaywall(){
+  const nm=A.name?`, ${A.name}`:'';const gl=GL[A.goal]||'твоей цели';const cnt=Object.keys(A).length;
+  wrap.innerHTML=`
+  <div class="scroll">
+    <div style="display:flex;justify-content:center;padding:calc(var(--safe-t) + 16px) 0 2px">
+      <video src="onb_demo.mp4" autoplay muted loop playsinline
+        style="width:47%;border-radius:24px;border:1px solid var(--border);box-shadow:0 20px 50px rgba(0,0,0,.65)"></video>
+    </div>
+    <div class="head" style="text-align:center;padding-top:14px;padding-bottom:12px"><div class="title" style="font-size:24px">Твоя программа для <span class="g">${gl}</span>${nm} готова</div><div class="sub">Собрана на основе твоих ${cnt} ответов.</div></div>
+    <div class="pad">
+      <div class="plan sel" id="py" onclick="selPlan('yearly')"><div class="save">ВЫГОДНО −40%</div><div><div class="t">Год</div><div class="s">≈ 249 ₽ в месяц</div></div><div style="display:flex;align-items:center"><div class="p">2 990 ₽<small>в год</small></div><div class="radio"></div></div></div>
+      <div class="plan" id="pm" onclick="selPlan('monthly')"><div><div class="t">Месяц</div><div class="s">Гибкая помесячная оплата</div></div><div style="display:flex;align-items:center"><div class="p">399 ₽<small>в месяц</small></div><div class="radio"></div></div></div>
+    </div>
+    <div class="pad" style="margin:14px 0 2px">
+      <div class="feat"><span class="ic">✨</span><span>AI-персонализация под твои ответы</span></div>
+      <div class="feat"><span class="ic">💬</span><span>Безлимитный чат с тренером</span></div>
+      <div class="feat"><span class="ic">📈</span><span>Прогресс, аналитика и адаптация плана</span></div>
+    </div>
+    <div style="height:6px"></div>
+  </div>
+  <div class="foot">
+    <button class="cta shimmer" onclick="finish('purchase')"><span>Открыть полный доступ</span></button>
+    <div class="pwsoc">Отмена подписки в любой момент</div>
+    <div class="links"><a onclick="finish('restore')">Восстановить</a></div>
+    <button class="ghost" onclick="finish('skip')">Продолжить без программы</button>
+  </div>`;
+}
+function selPlan(p){plan=p;document.getElementById('py').classList.toggle('sel',p==='yearly');document.getElementById('pm').classList.toggle('sel',p==='monthly');}
+function done(){destroyLots();renderPaywall();}
+// Финал → Superwall (Paywall.js перехватывает клики по data-pw-кнопкам):
+// purchase — покупка выбранного плана (primary=год/secondary=месяц), restore — восстановление,
+// skip — закрыть пейвол (кампания не-gated → пользователь проходит дальше в приложение).
+function finish(action){
+  const id=action==='purchase'?(plan==='yearly'?'pw-buy-primary':'pw-buy-secondary')
+          :action==='restore'?'pw-restore':'pw-close';
+  const btn=document.getElementById(id);
+  if(btn)btn.click();
+}
+next();
+</script>
+</body></html>
