@@ -3,7 +3,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
 <title>F/AI — Онбординг</title>
-<!-- Paywall.js — мост Superwall SDK ↔ страница (async обязателен). -->
+<!-- Paywall.js — мост Superwall (в WKWebView-превью тихо не загрузится, это ок). -->
 <script async src="https://cdn.superwall.me/runtime/entrypoint.js"></script>
 <script src="onb_lottie.min.js"></script>
 <script src="onb_anims.js"></script>
@@ -247,12 +247,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display"
 </head><body>
 <svg width="0" height="0"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7F86DB"/><stop offset="1" stop-color="#BD62F4"/></linearGradient></defs></svg>
 <div class="wrap" id="wrap"></div>
-<!-- Скрытые триггеры Paywall.js: primary = годовая (продукт №1 в дашборде), secondary = месячная.
-     Видимый CTA роутит клик по выбранному плану; restore/close — служебные действия Superwall. -->
-<button class="pw-hidden" id="pw-buy-primary" data-pw-purchase="primary" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
-<button class="pw-hidden" id="pw-buy-secondary" data-pw-purchase="secondary" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
-<button class="pw-hidden" id="pw-restore" data-pw-restore style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
-<button class="pw-hidden" id="pw-close" data-pw-close style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
+<!-- Скрытые триггеры Superwall Paywall.js: покупка/восстановление/закрытие + custom-канал
+     (data-pw-custom выставляется динамически: step-события и финальный JSON ответов). -->
+<button id="pw-buy-primary" data-pw-purchase="primary" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
+<button id="pw-buy-secondary" data-pw-purchase="secondary" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
+<button id="pw-restore" data-pw-restore style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
+<button id="pw-close" data-pw-close style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
+<button id="pw-custom" data-pw-custom="noop" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none"></button>
 <script>
 const COACHES=[
  {id:'fai',name:'F/AI',title:'AI-тренер',a:'#7F86DB',b:'#BD62F4',desc:'AI-тренер нового поколения. Анализирует тренировки, адаптирует программу и ведёт к цели с научным подходом.',traits:['Наука','Адаптивность','Точность','Аналитика'],quote:'Данные не врут. Построим твой лучший результат вместе.'},
@@ -333,7 +334,15 @@ function questionsLeft(){const r=route();const i=idxInRoute();const planI=r.find
 
 function next(){let j=cur+1;while(j<S.length&&S[j].when&&!S[j].when(A))j++;go(j);}
 function back(){if(hist.length){cur=hist.pop();render();}}
-function go(i){if(i>cur&&cur>=0)hist.push(cur);cur=i;if(cur>=S.length){done();return;}render();}
+// Custom-канал Superwall: динамическое имя действия → SDK → handleCustomPaywallAction в приложении.
+// Работает и в WKWebView-превью (кнопка без Paywall.js — тихий no-op).
+function swCustom(name){
+  try{const b=document.getElementById('pw-custom');b.setAttribute('data-pw-custom',name);b.click();}catch(e){}
+}
+function go(i){if(i>cur&&cur>=0)hist.push(cur);cur=i;if(cur>=S.length){done();return;}
+  // step-событие для воронки (drop-off по шагам в аналитике Superwall + приложении)
+  swCustom('onb_step:'+S[cur].id);
+  render();}
 function commit(key,val){if(key)A[key]=val;next();}
 
 function topBar(showHint){
@@ -703,10 +712,14 @@ function renderPaywall(){
 }
 function selPlan(p){plan=p;document.getElementById('py').classList.toggle('sel',p==='yearly');document.getElementById('pm').classList.toggle('sel',p==='monthly');}
 function done(){destroyLots();renderPaywall();}
-// Финал → Superwall (Paywall.js перехватывает клики по data-pw-кнопкам):
-// purchase — покупка выбранного плана (primary=год/secondary=месяц), restore — восстановление,
-// skip — закрыть пейвол (кампания не-gated → пользователь проходит дальше в приложение).
+// Финал: 1) отдаём ВСЕ ответы в приложение через custom-канал Superwall (для генерации плана),
+// 2) затем действие: покупка выбранного плана / restore / закрытие (не-gated skip).
+// В WKWebView-превью работает webkit-мост (перезапуск флоу).
 function finish(action){
+  swCustom('onb_answers:'+JSON.stringify({plan:plan,answers:A}));
+  if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.onboarding){
+    try{window.webkit.messageHandlers.onboarding.postMessage({action,plan,answers:A});return;}catch(e){}
+  }
   const id=action==='purchase'?(plan==='yearly'?'pw-buy-primary':'pw-buy-secondary')
           :action==='restore'?'pw-restore':'pw-close';
   const btn=document.getElementById(id);
